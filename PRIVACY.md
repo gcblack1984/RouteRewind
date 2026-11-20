@@ -9,7 +9,7 @@ d'uso e non trasmette all'autore i file aperti né le coordinate in essi contenu
 Tutta l'elaborazione avviene sul computer dell'utente.
 
 **Collegamenti a Internet.** Per mostrare le mappe online l'app scarica le immagini
-della mappa da fornitori esterni: CARTO, OpenStreetMap ed Esri (vista satellite).
+della mappa da fornitori esterni: CARTO (mappa stradale, con una chiave di accesso) ed Esri (vista satellite).
 Quando l'utente sceglie di salvare una mappa offline, l'app scarica i dati da
 build.protomaps.com (o dall'indirizzo indicato dall'utente). In queste richieste i
 fornitori ricevono, come per qualsiasi sito web, l'indirizzo IP del computer e le

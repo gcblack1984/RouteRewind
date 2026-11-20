@@ -13,7 +13,8 @@ LEAFLET_CSS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
 LEAFLET_JS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
 
 
-def build_report_html(result, start: int = 0, end: int | None = None, title: str | None = None) -> str:
+def build_report_html(result, start: int = 0, end: int | None = None, title: str | None = None,
+                      carto_key: str = "") -> str:
     pts = result.points[start:(end + 1) if end is not None else None]
     st = compute_stats(pts)
     src = os.path.basename(result.source)
@@ -109,11 +110,16 @@ const P = {json.dumps(data)};
     window.reportReady = true; return;
   }}
   const map = L.map('map', {{ preferCanvas: true }});
-  const base = L.tileLayer('https://{{s}}.basemaps.cartocdn.com/rastertiles/voyager/{{z}}/{{x}}/{{y}}{{r}}.png',
-    {{ maxZoom: 20, attribution: '© OpenStreetMap contributors © CARTO' }}).addTo(map);
+  const KEY = {json.dumps(carto_key or "")};
   const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{{z}}/{{y}}/{{x}}',
     {{ maxZoom: 19, attribution: 'Tiles © Esri' }});
-  L.control.layers({{ 'Mappa': base, 'Satellite': sat }}).addTo(map);
+  let base = sat;
+  if (KEY) {{
+    base = L.tileLayer('https://{{s}}.basemaps.cartocdn.com/rastertiles/voyager/{{z}}/{{x}}/{{y}}{{r}}.png?key=' + encodeURIComponent(KEY),
+      {{ maxZoom: 20, attribution: '© OpenStreetMap contributors © CARTO' }});
+    L.control.layers({{ 'Mappa': base, 'Satellite': sat }}).addTo(map);
+  }}
+  base.addTo(map);
   base.on('load', () => window.reportReady = true);
   setTimeout(() => window.reportReady = true, 8000);
   if (!P.length) return;
@@ -133,7 +139,7 @@ const P = {json.dumps(data)};
 </body></html>"""
 
 
-def save_report(result, path: str, start: int = 0, end: int | None = None) -> str:
+def save_report(result, path: str, start: int = 0, end: int | None = None, carto_key: str = "") -> str:
     with open(path, "w", encoding="utf-8") as f:
-        f.write(build_report_html(result, start, end))
+        f.write(build_report_html(result, start, end, carto_key=carto_key))
     return path

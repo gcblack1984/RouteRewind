@@ -18,6 +18,9 @@
   #empty p { margin: 0; color: #64748b; font-size: 14px; }
   #drop { display: none; background: rgba(37, 99, 235, .18); border: 4px dashed #2563eb; color: #1e3a8a;
           font-size: 22px; font-weight: 600; }
+  #nokey { position: absolute; z-index: 900; bottom: 28px; left: 50%; transform: translateX(-50%);
+           background: #fff7ed; color: #9a3412; border: 1px solid #fdba74; font-size: 13px;
+           padding: 6px 14px; border-radius: 8px; display: none; box-shadow: 0 1px 4px #0003; }
   #offline { display: none; background: #f8fafc; color: #475569; font-size: 15px; }
   #badge { position: absolute; z-index: 900; top: 10px; left: 50%; transform: translateX(-50%);
            background: #0f2040; color: #fff; font-size: 12px; padding: 4px 12px; border-radius: 12px;
@@ -34,6 +37,7 @@
 </div></div>
 <div id="drop">Rilascia il file per caricare il percorso</div>
 <div id="badge"></div>
+<div id="nokey">Mappa stradale non attiva: inserisci la chiave gratuita CARTO in <b>Impostazioni → Chiave mappe online</b>. Intanto è attiva la vista satellite.</div>
 <div id="offline">Impossibile caricare la mappa: controlla la connessione a Internet.</div>
 
 <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
@@ -57,15 +61,7 @@ const dotIcon = (L_, c) => L_.divIcon({
 
 function init() {
   map = L.map('map', { preferCanvas: true, zoomControl: true }).setView([41.9, 12.5], 6);
-  const voyager = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    { maxZoom: 20, attribution: '© OpenStreetMap contributors © CARTO' });
-  const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    { maxZoom: 19, attribution: '© OpenStreetMap contributors' });
-  const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    { maxZoom: 19, attribution: 'Tiles © Esri' });
-  onlineLayers = { 'Stradale (online)': voyager, 'OpenStreetMap (online)': osm, 'Satellite (online)': sat };
-  Object.values(onlineLayers).forEach(l => l.on('tileerror', onTileError).on('tileload', () => { tileErrors = 0; }));
-  currentBase = voyager.addTo(map);
+  makeOnlineLayers('');
   buildControl();
   map.on('baselayerchange', e => { currentBase = e.layer; tileErrors = 0; updateBadge(); });
   L.control.scale({ imperial: false }).addTo(map);
@@ -79,6 +75,31 @@ function init() {
 }
 
 function onReady() { ready = true; }
+
+// Mappe online: CARTO (stradale e chiara) richiede una chiave gratuita; Esri satellite no.
+function makeOnlineLayers(key) {
+  const wasOnline = !currentBase || Object.values(onlineLayers).includes(currentBase);
+  Object.values(onlineLayers).forEach(l => { if (map.hasLayer(l)) map.removeLayer(l); });
+  const k = encodeURIComponent(key || '');
+  const carto = style => L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/' + style + '/{z}/{x}/{y}{r}.png?key=' + k,
+    { maxZoom: 20, attribution: '© OpenStreetMap contributors © CARTO' });
+  const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    { maxZoom: 19, attribution: 'Tiles © Esri' });
+  onlineLayers = key
+    ? { 'Stradale (online)': carto('voyager'), 'Chiara (online)': carto('light_all'), 'Satellite (online)': sat }
+    : { 'Satellite (online)': sat };
+  Object.values(onlineLayers).forEach(l => l.on('tileerror', onTileError).on('tileload', () => { tileErrors = 0; }));
+  if (wasOnline) currentBase = (key ? onlineLayers['Stradale (online)'] : sat).addTo(map);
+  document.getElementById('nokey').style.display = key ? 'none' : 'block';
+  if (layerCtl) buildControl();
+}
+
+window.setTileKey = function (key) {
+  if (!map) return false;
+  makeOnlineLayers((key || '').trim());
+  updateBadge();
+  return true;
+};
 
 function buildControl() {
   if (layerCtl) map.removeControl(layerCtl);
@@ -127,7 +148,7 @@ window.setOfflineMaps = function (list) {
     });
   }
   if (wasOffline || !Object.values(onlineLayers).includes(currentBase)) {
-    if (!switchToOffline()) currentBase = onlineLayers['Stradale (online)'].addTo(map);
+    if (!switchToOffline()) currentBase = Object.values(onlineLayers)[0].addTo(map);
   }
   buildControl();
   if (!navigator.onLine) switchToOffline();

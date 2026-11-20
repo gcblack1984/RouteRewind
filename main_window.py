@@ -15,11 +15,11 @@ from PySide6.QtWebChannel import QWebChannel
 from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineProfile, QWebEngineSettings
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComboBox, QDockWidget, QFileDialog,
-                               QFrame, QHBoxLayout, QHeaderView, QLabel, QMainWindow, QMessageBox,
+                               QFrame, QHBoxLayout, QHeaderView, QInputDialog, QLabel, QMainWindow, QMessageBox,
                                QProgressDialog, QPushButton, QSizePolicy, QSlider, QStyle, QTableView,
                                QToolBar, QVBoxLayout, QWidget)
 
-from app_info import (APP_NAME, APP_TAGLINE, APP_VERSION, AUTHOR, COPYRIGHT, WINDOW_TITLE,
+from app_info import (APP_NAME, APP_TAGLINE, APP_VERSION, AUTHOR, CARTO_KEY, COPYRIGHT, WINDOW_TITLE,
                       resource_path)
 from offline import OfflineLibrary, TileServer
 from offline_ui import OfflineController
@@ -295,6 +295,8 @@ class MainWindow(QMainWindow):
         self.act_off_manage.triggered.connect(self.offline.manage)
         self.act_off_use = QAction("Passa alla mappa offline", self)
         self.act_off_use.triggered.connect(lambda: self.js("useOffline()"))
+        self.act_key = QAction("Chiave mappe online (CARTO)…", self)
+        self.act_key.triggered.connect(self.ask_carto_key)
         act_quit = QAction("Esci", self)
         act_quit.setShortcut(QKeySequence.Quit)
         act_quit.triggered.connect(self.close)
@@ -328,6 +330,8 @@ class MainWindow(QMainWindow):
             m.addAction(a)
         m.addSeparator()
         m.addAction(self.act_off_use)
+        m = self.menuBar().addMenu("&Impostazioni")
+        m.addAction(self.act_key)
         m = self.menuBar().addMenu("&Visualizza")
         m.addAction(self.dock.toggleViewAction())
         m = self.menuBar().addMenu("&?")
@@ -369,10 +373,25 @@ class MainWindow(QMainWindow):
                 pend, self._pending_js = self._pending_js, []
                 for c in pend:
                     self.js(c)
+                self.js(f"setTileKey({json.dumps(self.carto_key())})")
                 self.push_offline_maps()
             elif tries < 100:
                 QTimer.singleShot(150, lambda: self._wait_leaflet(tries + 1))
         self.view.page().runJavaScript("window.isReady && window.isReady()", 0, cb)
+
+    def carto_key(self) -> str:
+        return (self.settings.value("carto_key", "") or CARTO_KEY or "").strip()
+
+    def ask_carto_key(self):
+        key, ok = QInputDialog.getText(
+            self, "Chiave mappe online",
+            "La mappa stradale usa CARTO, che richiede una chiave gratuita.\n"
+            "Richiedila su carto.com/basemaps/apikey e incollala qui\n"
+            "(lascia vuoto per usare solo la vista satellite):",
+            text=self.carto_key())
+        if ok:
+            self.settings.setValue("carto_key", key.strip())
+            self.js(f"setTileKey({json.dumps(key.strip())})")
 
     def push_offline_maps(self):
         maps = [{"name": mm["name"], "url": self.tile_server.url_for(mm["file"]), "bbox": mm["bbox"],
@@ -638,7 +657,7 @@ class MainWindow(QMainWindow):
                                               "Pagina web (*.html)")
         if not path:
             return
-        save_report(self.result, path, start)
+        save_report(self.result, path, start, carto_key=self.carto_key())
         if QMessageBox.question(self, APP_NAME, "Report salvato. Vuoi aprirlo nel browser?") == QMessageBox.Yes:
             QDesktopServices.openUrl(QUrl.fromLocalFile(path))
 
@@ -654,7 +673,7 @@ class MainWindow(QMainWindow):
             return
         tmp = os.path.join(tempfile.gettempdir(), f"{APP_NAME}_report.html")
         with open(tmp, "w", encoding="utf-8") as f:
-            f.write(build_report_html(self.result, start))
+            f.write(build_report_html(self.result, start, carto_key=self.carto_key()))
         # vista fuori schermo: serve a far disegnare la mappa prima della stampa
         self._pdf_view = QWebEngineView()
         self._pdf_view.setPage(QWebEnginePage(self.profile, self._pdf_view))

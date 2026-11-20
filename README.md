@@ -40,7 +40,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-Le mappe online richiedono Internet. Per le mappe offline anche avviando da sorgente, esegui una volta `build.bat`: scarica Leaflet e protomaps-leaflet in `web\leaflet` e `web\lib`.
+Le mappe online richiedono Internet. La mappa stradale CARTO richiede una chiave gratuita ([carto.com/basemaps/apikey](https://carto.com/basemaps/apikey)): si inserisce in `app_info.py` (`CARTO_KEY`) oppure dall'app, in *Impostazioni → Chiave mappe online*. Senza chiave è disponibile la vista satellite. Per le mappe offline anche avviando da sorgente, esegui una volta `build.bat`: scarica Leaflet e protomaps-leaflet in `web\leaflet` e `web\lib`.
 
 Le mappe offline sono salvate in `%LOCALAPPDATA%\RouteRewind\offline`.
 

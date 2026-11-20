@@ -9,6 +9,10 @@ AUTHOR = "Giovanni Ciccarese"
 COPYRIGHT = f"© 2026 {AUTHOR}"
 APP_ID = "GiovanniCiccarese.RouteRewind"   # usato da Windows per l'icona nella barra
 
+# Chiave gratuita per le mappe CARTO (https://carto.com/basemaps/apikey).
+# Se vuota, l'utente può inserirla dall'app (Impostazioni > Chiave mappe online).
+CARTO_KEY = ""
+
 WINDOW_TITLE = f"{APP_NAME} — di {AUTHOR}"
 
 
