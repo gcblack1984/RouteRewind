@@ -19,7 +19,9 @@ a.datas = [d for d in a.datas if not d[0].replace('\\', '/').startswith('PySide6
 a.binaries = [b for b in a.binaries if not b[0].replace('\\', '/').startswith('PySide6/qml/')]
 # Il modello vuoto di python-docx contiene "[Content_Types].xml", nome riservato nei
 # pacchetti MSIX. L'app legge soltanto file Word esistenti, quindi il modello non serve.
-a.datas = [d for d in a.datas if '[Content_Types]' not in d[0]]
+a.datas = [d for d in a.datas if '[Content_Types]' not in d[0]
+           and 'default-docx-template' not in d[0]
+           and '_rels' not in d[0].replace('\\', '/').split('/')]
 # Anche i nomi con "+" (es. tzdata/zoneinfo/Etc/GMT+1) non sono accettati da MakeAppx;
 # l'app usa il fuso orario di Windows e non ha bisogno del database tzdata.
 a.datas = [d for d in a.datas if '+' not in d[0] and not d[0].replace('\\', '/').startswith('tzdata/')]
