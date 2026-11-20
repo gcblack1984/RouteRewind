@@ -1,12 +1,23 @@
 name: Release
 
-# Si avvia pubblicando un tag di versione, es.:  git tag v1.0.0 && git push origin v1.0.0
+# Si avvia in due modi:
+#  - pubblicando un tag di versione, es.:  git tag v1.0.1 && git push origin v1.0.1
+#  - a mano da Actions > Release > Run workflow, indicando un tag già esistente
+#    (ricostruisce exe e MSIX dal ramo principale e li allega a quella release)
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag della release a cui allegare i file (es. v1.0.0)"
+        required: true
 
 permissions:
   contents: write
+
+env:
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
 
 jobs:
   windows:
@@ -16,14 +27,37 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+
+      - name: Versione del pacchetto dal tag
+        shell: pwsh
+        run: |
+          $parts = "$env:TAG".TrimStart('v').Split('.') | ForEach-Object { [int]($_ -replace '\D','') }
+          while ($parts.Count -lt 3) { $parts += 0 }
+          $ver = "$($parts[0]).$($parts[1]).$($parts[2]).0"
+          $m = 'packaging\AppxManifest.xml'
+          (Get-Content $m -Raw) -replace '(?<=\s)Version="[\d.]+"', "Version=`"$ver`"" | Set-Content $m -NoNewline
+          Write-Host "Versione MSIX: $ver"
+          Select-String -Path $m -Pattern 'Version='
+
       - name: Build exe
         shell: cmd
         run: call build.bat
-      - name: Comprimi
+
+      - name: Comprimi l'exe
         shell: pwsh
-        run: Compress-Archive -Path dist\RouteRewind -DestinationPath "RouteRewind-${{ github.ref_name }}-windows-x64.zip"
+        run: Compress-Archive -Path dist\RouteRewind -DestinationPath "RouteRewind-$env:TAG-windows-x64.zip"
+
+      - name: Crea il pacchetto MSIX
+        shell: cmd
+        run: |
+          call make_msix.bat || exit /b 1
+          move dist\RouteRewind.msix "RouteRewind-%TAG%-x64.msix"
+
       - name: Pubblica la release
         uses: softprops/action-gh-release@v2
         with:
-          files: RouteRewind-${{ github.ref_name }}-windows-x64.zip
+          tag_name: ${{ env.TAG }}
+          files: |
+            RouteRewind-${{ env.TAG }}-windows-x64.zip
+            RouteRewind-${{ env.TAG }}-x64.msix
           generate_release_notes: true

@@ -50,7 +50,7 @@ Le mappe offline sono salvate in `%LOCALAPPDATA%\RouteRewind\offline`.
 2. Su [Partner Center](https://partner.microsoft.com/dashboard) riserva il nome e copia i dati di *Identità del prodotto* in `packaging\AppxManifest.xml`.
 3. `make_msix.bat` (richiede il Windows SDK) crea `dist\RouteRewind.msix` da caricare in Partner Center.
 
-Pubblicando un tag `v*` su GitHub, il workflow *Release* crea l'exe e lo allega alla release.
+Pubblicando un tag `v*` su GitHub, il workflow *Release* crea lo zip con l'exe e il pacchetto `.msix` per lo Store e li allega alla release. Da *Actions → Release → Run workflow* si possono ricreare i file per una release già esistente.
 
 ## Test
 
