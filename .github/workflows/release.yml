@@ -68,7 +68,7 @@ jobs:
           python tools\find_bad_msix_file.py $mk.FullName dist\RouteRewind
 
       - name: Pubblica la release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.TAG }}
           files: |
