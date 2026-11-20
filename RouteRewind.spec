@@ -17,6 +17,9 @@ a = Analysis(
 # pacchetto di centinaia di file ed evita nomi di file non accettati da MakeAppx.
 a.datas = [d for d in a.datas if not d[0].replace('\\', '/').startswith('PySide6/qml/')]
 a.binaries = [b for b in a.binaries if not b[0].replace('\\', '/').startswith('PySide6/qml/')]
+# Il modello vuoto di python-docx contiene "[Content_Types].xml", nome riservato nei
+# pacchetti MSIX. L'app legge soltanto file Word esistenti, quindi il modello non serve.
+a.datas = [d for d in a.datas if '[Content_Types]' not in d[0]]
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 exe = EXE(
