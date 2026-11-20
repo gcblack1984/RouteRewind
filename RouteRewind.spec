@@ -13,6 +13,11 @@ a = Analysis(
     excludes=['tkinter', 'pandas', 'numpy.tests', 'matplotlib'],
     cipher=block_cipher,
 )
+# Le cartelle QML di Qt non servono (l'interfaccia usa i widget): toglierle riduce il
+# pacchetto di centinaia di file ed evita nomi di file non accettati da MakeAppx.
+a.datas = [d for d in a.datas if not d[0].replace('\\', '/').startswith('PySide6/qml/')]
+a.binaries = [b for b in a.binaries if not b[0].replace('\\', '/').startswith('PySide6/qml/')]
+
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 exe = EXE(
     pyz, a.scripts, [],

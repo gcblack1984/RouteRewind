@@ -47,6 +47,13 @@ jobs:
         shell: pwsh
         run: Compress-Archive -Path dist\RouteRewind -DestinationPath "RouteRewind-$env:TAG-windows-x64.zip"
 
+      - name: Controlla i nomi dei file del pacchetto
+        shell: pwsh
+        run: |
+          $bad = Get-ChildItem dist\RouteRewind -Recurse -File | Where-Object { $_.Name -notmatch '^[A-Za-z0-9._\-+@ ()~]+$' }
+          Write-Host "File totali:" (Get-ChildItem dist\RouteRewind -Recurse -File).Count
+          if ($bad) { Write-Host "Nomi con caratteri particolari:"; $bad | ForEach-Object { Write-Host $_.FullName } }
+
       - name: Crea il pacchetto MSIX
         shell: cmd
         run: |
