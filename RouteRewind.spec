@@ -10,7 +10,7 @@ a = Analysis(
     hiddenimports=['main_window', 'splash', 'parsers', 'report', 'track',
                    'offline', 'offline_ui', 'pmtiles_extract',
                    'pdfplumber', 'openpyxl', 'docx', 'dateutil', 'xlrd'],
-    excludes=['tkinter', 'pandas', 'numpy.tests', 'matplotlib'],
+    excludes=['tkinter', 'pandas', 'numpy.tests', 'matplotlib', 'tzdata'],
     cipher=block_cipher,
 )
 # Le cartelle QML di Qt non servono (l'interfaccia usa i widget): toglierle riduce il
@@ -20,6 +20,9 @@ a.binaries = [b for b in a.binaries if not b[0].replace('\\', '/').startswith('P
 # Il modello vuoto di python-docx contiene "[Content_Types].xml", nome riservato nei
 # pacchetti MSIX. L'app legge soltanto file Word esistenti, quindi il modello non serve.
 a.datas = [d for d in a.datas if '[Content_Types]' not in d[0]]
+# Anche i nomi con "+" (es. tzdata/zoneinfo/Etc/GMT+1) non sono accettati da MakeAppx;
+# l'app usa il fuso orario di Windows e non ha bisogno del database tzdata.
+a.datas = [d for d in a.datas if '+' not in d[0] and not d[0].replace('\\', '/').startswith('tzdata/')]
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 exe = EXE(
