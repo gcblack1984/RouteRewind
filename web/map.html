@@ -81,7 +81,7 @@ function makeOnlineLayers(key) {
   const wasOnline = !currentBase || Object.values(onlineLayers).includes(currentBase);
   Object.values(onlineLayers).forEach(l => { if (map.hasLayer(l)) map.removeLayer(l); });
   const k = encodeURIComponent(key || '');
-  const carto = style => L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/' + style + '/{z}/{x}/{y}{r}.png?key=' + k,
+  const carto = style => L.tileLayer('https://basemaps.cartocdn.com/rastertiles/' + style + '/{z}/{x}/{y}{r}.png?key=' + k,
     { maxZoom: 20, attribution: '© OpenStreetMap contributors © CARTO' });
   const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     { maxZoom: 19, attribution: 'Tiles © Esri' });

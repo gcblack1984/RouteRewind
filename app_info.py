@@ -11,7 +11,7 @@ APP_ID = "GiovanniCiccarese.RouteRewind"   # usato da Windows per l'icona nella 
 
 # Chiave gratuita per le mappe CARTO (https://carto.com/basemaps/apikey).
 # Se vuota, l'utente può inserirla dall'app (Impostazioni > Chiave mappe online).
-CARTO_KEY = ""
+CARTO_KEY = "cb1_5d07_1_527a7250eb713b0508ce1536"
 
 WINDOW_TITLE = f"{APP_NAME} — di {AUTHOR}"
 

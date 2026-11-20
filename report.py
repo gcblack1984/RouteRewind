@@ -115,7 +115,7 @@ const P = {json.dumps(data)};
     {{ maxZoom: 19, attribution: 'Tiles © Esri' }});
   let base = sat;
   if (KEY) {{
-    base = L.tileLayer('https://{{s}}.basemaps.cartocdn.com/rastertiles/voyager/{{z}}/{{x}}/{{y}}{{r}}.png?key=' + encodeURIComponent(KEY),
+    base = L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager/{{z}}/{{x}}/{{y}}{{r}}.png?key=' + encodeURIComponent(KEY),
       {{ maxZoom: 20, attribution: '© OpenStreetMap contributors © CARTO' }});
     L.control.layers({{ 'Mappa': base, 'Satellite': sat }}).addTo(map);
   }}
