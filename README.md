@@ -17,7 +17,8 @@ di <b>Giovanni Ciccarese</b>
 
 ## Scarica
 
-L'ultima versione per Windows è nella pagina [Releases](../../releases/latest): scarica lo zip, estrailo e avvia `RouteRewind.exe`.
+- **Microsoft Store**: [RouteRewind](https://apps.microsoft.com/detail/9P41JC57SPDS) (disponibile dopo la certificazione).
+- **GitHub**: l'ultima versione per Windows è nella pagina [Releases](../../releases/latest): scarica lo zip, estrailo e avvia `RouteRewind.exe`.
 
 ## Funzioni
 

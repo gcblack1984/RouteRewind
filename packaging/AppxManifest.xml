@@ -1,19 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  Sostituisci i tre valori tra parentesi quadre con quelli che trovi in
-  Partner Center > la tua app > Gestione prodotto > Identità del prodotto.
--->
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
          xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
          xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
          IgnorableNamespaces="uap rescap">
-  <Identity Name="[Package/Identity/Name]"
-            Publisher="[Package/Identity/Publisher]"
+  <Identity Name="CICCARESEGiovanni.RouteRewind"
+            Publisher="CN=E9C25802-DEC0-43B0-BFF6-582461D661F8"
             Version="1.0.0.0"
             ProcessorArchitecture="x64" />
   <Properties>
     <DisplayName>RouteRewind</DisplayName>
-    <PublisherDisplayName>[PublisherDisplayName]</PublisherDisplayName>
+    <PublisherDisplayName>CICCARESE Giovanni</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
     <Description>Ricostruzione e animazione di percorsi da file - di Giovanni Ciccarese</Description>
   </Properties>
