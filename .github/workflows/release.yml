@@ -35,7 +35,7 @@ jobs:
           while ($parts.Count -lt 3) { $parts += 0 }
           $ver = "$($parts[0]).$($parts[1]).$($parts[2]).0"
           $m = 'packaging\AppxManifest.xml'
-          (Get-Content $m -Raw) -replace '(?<=\s)Version="[\d.]+"', "Version=`"$ver`"" | Set-Content $m -NoNewline
+          (Get-Content $m -Raw) -creplace '(?<=\s)Version="[\d.]+"', "Version=`"$ver`"" | Set-Content $m -NoNewline
           Write-Host "Versione MSIX: $ver"
           Select-String -Path $m -Pattern 'Version='
 
