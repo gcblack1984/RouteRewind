@@ -4,7 +4,7 @@ import sys
 
 APP_NAME = "RouteRewind"
 APP_TAGLINE = "Ricostruzione e animazione di percorsi da file"
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.0.1"
 AUTHOR = "Giovanni Ciccarese"
 COPYRIGHT = f"© 2026 {AUTHOR}"
 APP_ID = "GiovanniCiccarese.RouteRewind"   # usato da Windows per l'icona nella barra

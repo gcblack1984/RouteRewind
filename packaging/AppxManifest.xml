@@ -5,7 +5,7 @@
          IgnorableNamespaces="uap rescap">
   <Identity Name="CICCARESEGiovanni.RouteRewind"
             Publisher="CN=E9C25802-DEC0-43B0-BFF6-582461D661F8"
-            Version="1.0.0.0"
+            Version="1.0.1.0"
             ProcessorArchitecture="x64" />
   <Properties>
     <DisplayName>RouteRewind</DisplayName>
