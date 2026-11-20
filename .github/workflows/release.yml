@@ -60,6 +60,13 @@ jobs:
           call make_msix.bat || exit /b 1
           move dist\RouteRewind.msix "RouteRewind-%TAG%-x64.msix"
 
+      - name: Diagnostica MSIX (solo se la creazione fallisce)
+        if: failure()
+        shell: pwsh
+        run: |
+          $mk = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Recurse -Filter makeappx.exe | Where-Object FullName -match '\\x64\\' | Select-Object -Last 1
+          python tools\find_bad_msix_file.py $mk.FullName dist\RouteRewind
+
       - name: Pubblica la release
         uses: softprops/action-gh-release@v2
         with:
