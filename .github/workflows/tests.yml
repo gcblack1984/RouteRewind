@@ -1,0 +1,19 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Dipendenze (senza interfaccia grafica)
+        run: pip install pdfplumber openpyxl python-docx python-dateutil pytest reportlab
+      - name: Test
+        run: python -m pytest -q tests

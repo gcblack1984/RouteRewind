@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sostituisci i tre valori tra parentesi quadre con quelli che trovi in
+  Partner Center > la tua app > Gestione prodotto > Identità del prodotto.
+-->
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+         xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+         xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+         IgnorableNamespaces="uap rescap">
+  <Identity Name="[Package/Identity/Name]"
+            Publisher="[Package/Identity/Publisher]"
+            Version="1.0.0.0"
+            ProcessorArchitecture="x64" />
+  <Properties>
+    <DisplayName>RouteRewind</DisplayName>
+    <PublisherDisplayName>[PublisherDisplayName]</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+    <Description>Ricostruzione e animazione di percorsi da file - di Giovanni Ciccarese</Description>
+  </Properties>
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.22631.0" />
+  </Dependencies>
+  <Resources>
+    <Resource Language="it-IT" />
+    <Resource Language="en-US" />
+  </Resources>
+  <Applications>
+    <Application Id="RouteRewind" Executable="RouteRewind.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements DisplayName="RouteRewind"
+                          Description="Ricostruzione e animazione di percorsi da file"
+                          BackgroundColor="transparent"
+                          Square150x150Logo="Assets\Square150x150Logo.png"
+                          Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png"
+                         Square71x71Logo="Assets\Square71x71Logo.png"
+                         Square310x310Logo="Assets\Square310x310Logo.png" />
+        <uap:SplashScreen Image="Assets\SplashScreen.png" BackgroundColor="#0f2040" />
+      </uap:VisualElements>
+      <Extensions>
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="trackfiles">
+            <uap:DisplayName>File di percorso</uap:DisplayName>
+            <uap:SupportedFileTypes>
+              <uap:FileType>.gpx</uap:FileType>
+              <uap:FileType>.kml</uap:FileType>
+              <uap:FileType>.kmz</uap:FileType>
+              <uap:FileType>.geojson</uap:FileType>
+              <uap:FileType>.nmea</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+  <Capabilities>
+    <Capability Name="internetClient" />
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

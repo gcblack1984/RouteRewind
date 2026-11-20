@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mappa</title>
+<link rel="stylesheet" href="leaflet/leaflet.css" onerror="this.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'">
+<style>
+  html, body, #map { height: 100%; margin: 0; }
+  body { font-family: "Segoe UI", system-ui, sans-serif; background: #e5e7eb; }
+  #empty, #drop, #offline {
+    position: absolute; inset: 0; z-index: 1000; display: flex; align-items: center;
+    justify-content: center; flex-direction: column; text-align: center; pointer-events: none;
+  }
+  #empty { background: rgba(248, 250, 252, .86); color: #334155; }
+  #empty .box { border: 2px dashed #94a3b8; border-radius: 16px; padding: 36px 48px; background: #fff; }
+  #empty h2 { margin: 0 0 6px; font-size: 20px; font-weight: 600; }
+  #empty p { margin: 0; color: #64748b; font-size: 14px; }
+  #drop { display: none; background: rgba(37, 99, 235, .18); border: 4px dashed #2563eb; color: #1e3a8a;
+          font-size: 22px; font-weight: 600; }
+  #offline { display: none; background: #f8fafc; color: #475569; font-size: 15px; }
+  #badge { position: absolute; z-index: 900; top: 10px; left: 50%; transform: translateX(-50%);
+           background: #0f2040; color: #fff; font-size: 12px; padding: 4px 12px; border-radius: 12px;
+           display: none; box-shadow: 0 1px 4px #0006; pointer-events: none; }
+  .pin { filter: drop-shadow(0 2px 3px rgba(0,0,0,.45)); }
+  .leaflet-tooltip.lbl { font-size: 12px; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="empty"><div class="box">
+  <h2>Trascina qui un file</h2>
+  <p>PDF, Excel, CSV, Word, GPX, KML, GeoJSON, JSON, NMEA, TXT…<br>oppure usa <b>Apri</b> (Ctrl+O)</p>
+</div></div>
+<div id="drop">Rilascia il file per caricare il percorso</div>
+<div id="badge"></div>
+<div id="offline">Impossibile caricare la mappa: controlla la connessione a Internet.</div>
+
+<script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+<script>
+function loadScript(src, ok, ko) {
+  const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = ko;
+  document.head.appendChild(s);
+}
+let map = null, pts = [], ll = [], fullLine = null, doneLine = null, dots = null,
+    mover = null, startM = null, endM = null, follow = true, bridge = null, ready = false;
+let onlineLayers = {}, offline = [], layerCtl = null, currentBase = null, tileErrors = 0;
+
+const pinIcon = L_ => L_.divIcon({
+  className: 'pin', iconSize: [30, 40], iconAnchor: [15, 38],
+  html: '<svg width="30" height="40" viewBox="0 0 30 40"><path d="M15 39C15 39 2 23 2 14a13 13 0 0 1 26 0c0 9-13 25-13 25z" fill="#ef4444" stroke="#fff" stroke-width="2"/><circle cx="15" cy="14" r="5" fill="#fff"/></svg>'
+});
+const dotIcon = (L_, c) => L_.divIcon({
+  className: '', iconSize: [18, 18], iconAnchor: [9, 9],
+  html: `<div style="width:14px;height:14px;border-radius:50%;background:${c};border:3px solid #fff;box-shadow:0 1px 3px #0007"></div>`
+});
+
+function init() {
+  map = L.map('map', { preferCanvas: true, zoomControl: true }).setView([41.9, 12.5], 6);
+  const voyager = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    { maxZoom: 20, attribution: '© OpenStreetMap contributors © CARTO' });
+  const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    { maxZoom: 19, attribution: '© OpenStreetMap contributors' });
+  const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    { maxZoom: 19, attribution: 'Tiles © Esri' });
+  onlineLayers = { 'Stradale (online)': voyager, 'OpenStreetMap (online)': osm, 'Satellite (online)': sat };
+  Object.values(onlineLayers).forEach(l => l.on('tileerror', onTileError).on('tileload', () => { tileErrors = 0; }));
+  currentBase = voyager.addTo(map);
+  buildControl();
+  map.on('baselayerchange', e => { currentBase = e.layer; tileErrors = 0; updateBadge(); });
+  L.control.scale({ imperial: false }).addTo(map);
+  if (typeof QWebChannel !== 'undefined' && typeof qt !== 'undefined') {
+    new QWebChannel(qt.webChannelTransport, ch => { bridge = ch.objects.bridge; });
+  }
+  window.addEventListener('offline', () => switchToOffline());
+  // il motore delle mappe offline è facoltativo: se manca restano le mappe online
+  loadScript('lib/protomaps-leaflet.js', onReady, () =>
+    loadScript('https://unpkg.com/protomaps-leaflet@5.1.0/dist/protomaps-leaflet.js', onReady, onReady));
+}
+
+function onReady() { ready = true; }
+
+function buildControl() {
+  if (layerCtl) map.removeControl(layerCtl);
+  const all = Object.assign({}, onlineLayers);
+  offline.forEach(o => { all['Offline · ' + o.name] = o.layer; });
+  layerCtl = L.control.layers(all, null, { collapsed: true }).addTo(map);
+}
+
+function onTileError() {
+  tileErrors++;
+  if (tileErrors >= 6 && Object.values(onlineLayers).includes(currentBase)) switchToOffline();
+}
+
+function updateBadge() {
+  const o = offline.find(x => x.layer === currentBase);
+  const b = document.getElementById('badge');
+  b.textContent = o ? 'Mappa offline: ' + o.name : '';
+  b.style.display = o ? 'block' : 'none';
+}
+
+function switchToOffline() {
+  if (!offline.length || !map) return false;
+  const c = map.getCenter();
+  const o = offline.find(x => x.bounds.contains(c)) || offline[0];
+  if (currentBase === o.layer) return true;
+  if (currentBase) map.removeLayer(currentBase);
+  currentBase = o.layer.addTo(map);
+  tileErrors = 0;
+  updateBadge();
+  return true;
+}
+
+window.setOfflineMaps = function (list) {
+  if (!ready) return -1;
+  const wasOffline = offline.some(x => x.layer === currentBase);
+  offline.forEach(o => { if (map.hasLayer(o.layer)) map.removeLayer(o.layer); });
+  offline = [];
+  if (typeof protomapsL !== 'undefined') {
+    list.forEach(m => {
+      const layer = protomapsL.leafletLayer({
+        url: m.url, flavor: 'light', lang: 'it', maxDataZoom: m.maxzoom,
+        attribution: '© OpenStreetMap contributors · Protomaps'
+      });
+      offline.push({ name: m.name, layer: layer,
+                     bounds: L.latLngBounds([m.bbox[1], m.bbox[0]], [m.bbox[3], m.bbox[2]]) });
+    });
+  }
+  if (wasOffline || !Object.values(onlineLayers).includes(currentBase)) {
+    if (!switchToOffline()) currentBase = onlineLayers['Stradale (online)'].addTo(map);
+  }
+  buildControl();
+  if (!navigator.onLine) switchToOffline();
+  updateBadge();
+  return offline.length;
+};
+
+window.useOffline = () => switchToOffline();
+window.offlineEngine = () => typeof protomapsL !== 'undefined';
+
+loadScript('leaflet/leaflet.js', init, () =>
+  loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', init,
+    () => { document.getElementById('offline').style.display = 'flex'; }));
+
+window.isReady = () => ready;
+
+window.clearTrack = function () {
+  [fullLine, doneLine, dots, mover, startM, endM].forEach(l => l && map.removeLayer(l));
+  fullLine = doneLine = dots = mover = startM = endM = null; pts = []; ll = [];
+};
+
+window.setTrack = function (data) {
+  if (!ready) return false;
+  window.clearTrack();
+  pts = data; ll = data.map(p => [p.lat, p.lon]);
+  document.getElementById('empty').style.display = ll.length ? 'none' : 'flex';
+  if (!ll.length) return true;
+  fullLine = L.polyline(ll, { color: '#64748b', weight: 3, opacity: .6, dashArray: '6 6' }).addTo(map);
+  doneLine = L.polyline([ll[0]], { color: '#2563eb', weight: 5, opacity: .95 }).addTo(map);
+  dots = L.layerGroup().addTo(map);
+  const r = ll.length > 3000 ? 2 : 4;
+  pts.forEach((p, i) => {
+    L.circleMarker(ll[i], { radius: r, color: '#1e3a8a', weight: 1, fillColor: '#93c5fd', fillOpacity: 1 })
+      .bindTooltip(`#${i + 1} · ${p.t}`, { className: 'lbl' })
+      .on('click', () => bridge && bridge.pointClicked(i))
+      .addTo(dots);
+  });
+  startM = L.marker(ll[0], { icon: dotIcon(L, '#16a34a'), interactive: false }).addTo(map);
+  endM = L.marker(ll[ll.length - 1], { icon: dotIcon(L, '#dc2626'), interactive: false }).addTo(map);
+  mover = L.marker(ll[0], { icon: pinIcon(L), zIndexOffset: 1000 }).addTo(map);
+  map.fitBounds(L.latLngBounds(ll).pad(0.12));
+  return true;
+};
+
+window.setPosition = function (f) {
+  if (!mover || !ll.length) return;
+  const n = ll.length;
+  f = Math.max(0, Math.min(n - 1, f));
+  const i = Math.floor(f), k = f - i;
+  const a = ll[i], b = ll[Math.min(i + 1, n - 1)];
+  const cur = [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+  mover.setLatLng(cur);
+  doneLine.setLatLngs(ll.slice(0, i + 1).concat([cur]));
+  if (follow) {
+    const inner = map.getBounds().pad(-0.25);
+    if (!inner.contains(cur)) map.panTo(cur, { animate: false });
+  }
+};
+
+window.setFollow = v => { follow = !!v; };
+window.fitAll = () => { if (ll.length) map.fitBounds(L.latLngBounds(ll).pad(0.12)); };
+window.showDrop = v => { document.getElementById('drop').style.display = v ? 'flex' : 'none'; };
+</script>
+</body>
+</html>
