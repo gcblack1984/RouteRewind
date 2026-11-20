@@ -98,8 +98,8 @@ def make_pdf(pts):
     ]))
     doc.build([
         Paragraph("Registro posizioni – gita in Puglia (dati di esempio)", ss["Title"]),
-        Paragraph("Percorso fittizio creato per provare RouteRewind: Bari → Polignano a Mare → Monopoli → "
-                  "Castellana Grotte → Alberobello → Locorotondo → Cisternino → Ostuni. "
+        Paragraph("Percorso fittizio creato per provare RouteRewind: Bari, Polignano a Mare, Monopoli, "
+                  "Castellana Grotte, Alberobello, Locorotondo, Cisternino, Ostuni. "
                   f"{len(pts)} posizioni del {START:%d/%m/%Y}.", ss["Normal"]),
         Spacer(1, 6 * mm), tb])
 
